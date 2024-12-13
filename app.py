@@ -4,7 +4,6 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import requests
 import polars as pl
 from datetime import date
-import api_scraper
 import pandas as pd
 import numpy as np
 from  matplotlib.ticker import FuncFormatter
@@ -18,10 +17,23 @@ import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
 
 
+# Display the app title and description
+st.markdown("""
+## MLB Pitch Pair Plots App
+##### By: Thomas Nestico ([@TJStats](https://x.com/TJStats))
+##### Data: [MLB](https://baseballsavant.mlb.com/)
+#### About
+This Streamlit app retrieves MLB  Pitching Data for a selected pitcher from the MLB Stats API and is accessed using my [MLB Stats API Scraper](https://github.com/tnestico/mlb_scraper).
+The app outputs the pitcher's data into a pair plot to illustrate the data. 
+It can also display data for games currently in progress.
+*More information about the data and plots is shown at the bottom of this page.*
+"""
+)
+
 from datasets import load_dataset
 dataset = load_dataset('nesticot/mlb_data', data_files=['mlb_pitch_data_2024.csv' ])
 dataset_train = dataset['train']
-df = dataset_train.to_pandas().set_index(list(dataset_train.features.keys())[0]).reset_index(drop=True)
+df = pl.DataFrame(dataset_train.to_pandas().set_index(list(dataset_train.features.keys())[0]).reset_index(drop=True))
 
 #df = pl.read_csv('mlb_pitch_data_2024.csv')
 
@@ -214,10 +226,10 @@ def plot_function():
                 label = [dict_pitch[x] for x in items_in_order]
                 handles = [plt.scatter([], [], color=color, marker='o', s=100) for color in colour_pitches]
                 if len(label) > 5:
-                    ax.legend(handles+[solid_line, dashed_line], label+[f'{df_plot["pitcher_name"][0]}', f'MLB {df_plot["pitcher_hand"][0]}HP Average'], bbox_to_anchor=(0.2, 0.2, 0.6, 0.6), ncol=1,
+                    ax.legend(handles+[solid_line, dashed_line], label+[f'{df_plot["pitcher_name"][0]}', f'MLB {df_plot["pitcher_hand"][0]}HP Average'], bbox_to_anchor=(0.2, 0.3, 0.6, 0.6), ncol=1,
                             fancybox=True, loc='upper center', fontsize=16, framealpha=1.0, markerscale=1.2)
                 else:
-                    ax.legend(handles+[solid_line, dashed_line], label+[f'{df_plot["pitcher_name"][0]}', f'MLB {df_plot["pitcher_hand"][0]}HP Average'], bbox_to_anchor=(0.2, 0.2, 0.6, 0.6), ncol=1,
+                    ax.legend(handles+[solid_line, dashed_line], label+[f'{df_plot["pitcher_name"][0]}', f'MLB {df_plot["pitcher_hand"][0]}HP Average'], bbox_to_anchor=(0.2, 0.3, 0.6, 0.6), ncol=1,
                             fancybox=True, loc='upper center', fontsize=16, framealpha=1.0, markerscale=1.2)
                 ax.axis('off')            
                 # Create custom legend handles
@@ -243,7 +255,7 @@ def plot_function():
     ax_bottom.text(0.1,0.5,'By: @TJStats',fontsize=20,ha='left',va='bottom')
     # Add labels to the top
     ax_bottom.text(0.9,0.5,'Data: MLB',fontsize=20,ha='right',va='bottom')
-
+    fig.tight_layout()
     st.pyplot(fig)
 
 # Button to generate plot
@@ -252,3 +264,12 @@ if st.button('Generate Plot'):
         plot_function()
     except IndexError:
         st.write('Please select different parameters.')
+
+
+st.markdown("""
+#### Column Descriptions
+- **`Pitch Type`**: Describes the type of pitch thrown (e.g., 4-Seam Fastball, Curveball, Slider).
+- **`Plate Time`**: The flight time of the pitch (s).
+- **`iVB`**: Induced Vertical Break (iVB), representing the amount movement of a pitch strictly due to the spin imparted on the ball, measured in inches (in).
+- **`HB`**: Horizontal Break (HB), indicating the amount of horizontal movement of a pitch, measured in inches (in).
+""")
